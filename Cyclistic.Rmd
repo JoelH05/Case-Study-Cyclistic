@@ -1,0 +1,303 @@
+---
+title: "Case study Cyclistic Data"
+author: "Joël Holla"
+date: "2023-08-09"
+output:
+  html_document: default
+---
+
+![Cyclistic](C:\Users\j_h_o\Documents\Capstone Project Case Study 1\Cyclistic.png)
+
+This case study will follow the **ASK**, **PREPARE**, **PROCESS**, **ANALYZE**, **SHARE** and **ACT** steps for data analysis.
+
+**Scenario**
+
+I am working as a junior data analyst in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director of marketing believes the company’s future success depends on maximizing the number of annual memberships. Your team is asked to understand how casual riders and annual members use Cyclistic bikes differently. From these insights, your team will design a new marketing strategy to convert casual riders into annual members. Firstly, Cyclistic executives must approve your recommendations, so they must be backed up with compelling data insights and professional data visualizations.
+
+
+**About the company**
+
+In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system at anytime. 
+
+One approach that helped make these things possible was the flexibility of its pricing plans: single-ride passes, full-day passes, and annual memberships. Customers who purchased single-ride or full-day passes are referred to as casual riders. Customers who purchased annual memberships are Cyclistic members. 
+
+Cyclistic’s finance analysts have concluded that annual members are much more profitable than casual riders. Although the pricing flexibility helps Cyclistic attract more customers, the marketing director believes that maximizing the number of annual members will be key to future growth. Rather than creating a marketing campaign that targets all-new customers, the marketing director believes there is a very good chance to convert casual riders into members. 
+
+
+**Goal of this case study**
+
+How do annual members and casual riders use Cyclistic bikes differently?
+
+Deliverables upon the completion of this project:
+
+1. A clear statement of the business task 
+2. A description of all data sources used 
+3. Documentation of any cleaning or manipulation of data 
+4. A summary of your analysis 
+5. Supporting visualizations and key findings 
+6. Your top recommendations based on your analysis
+
+
+**Ask**
+
+Business task: The main goal of this case study is to maximize the number of annual memberships, through the analysis of trends and similarities between casual riders and annual members, to identify potential casual riders that would be interested in subscribing for annual membership
+
+Stakeholders:
+
+1. Director of Marketing
+2. Marketing analytics team
+3. Cyclistic executive team
+
+**Prepare**
+	
+Data source: [Cyclistic data](https://divvy-tripdata.s3.amazonaws.com/index.html)
+
+Cyclistic is a fictional company so we will be using the data made available by Motivate International Inc, under the Divvy bicycle sharing services [license](https://ride.divvybikes.com/data-license-agreement), from the months of July 2022 - June 2023
+
+Investigated data using the ROCCC method:
+
+**Reliable**: The dataset is unbiased and reliable.
+
+**Original**: Original public internal data source
+
+**Comprehensive**: The dataset has more than 5 million complete data entries.
+
+**Current**: The dataset is updated monthly and includes the last 12 months
+
+**Cited**: The data has not been cited
+
+Key tasks: 
+
+  1. The data has been stored and copied to the computer 
+  2. Downloaded the data for the periods between July 2022 - June 2023
+  3. The dataset is organized into 12 separate csv files (comma-separated values) which includes 13 columns and over 5 million rows.
+
+**Process**
+
+##Tools used for processing data:
+
+Due to the large amount of raw data included in the datasets, I chose to use the programming language R using R Studio Desktop, this was the best choice that R is extremely versatile with large datasets and also make it easier to reproduce the results.
+
+Installed and loaded all the necessary packages and libraries to run and clean all the data. Uploaded all the csv files into individual dataframes using the read.csv() function from the readr library. 
+
+Install required packages
+tidyverse for data import and wrangling
+lubridate for date functions
+ggplot for visualization
+
+
+**Cleaning and processing:**
+
+**Load Libraries**
+
+```{r}
+library(tidyverse) #helps wrangle data
+library(janitor) 
+library(lubridate) #helps wangle data attributes
+library(hms) #helps to calculate the time
+```
+#=====================
+# STEP 1: COLLECT DATA
+#=====================
+
+Import data into R Studio
+```{r}
+july_22 <- read.csv("~/Capstone Project Case Study 1/202207-divvy-tripdata.csv")
+august_22 <- read.csv("~/Capstone Project Case Study 1/202208-divvy-tripdata.csv")
+september_22 <- read.csv("~/Capstone Project Case Study 1/202209-divvy-publictripdata.csv")
+october_22 <- read.csv("~/Capstone Project Case Study 1/202210-divvy-tripdata.csv")
+november_22 <- read.csv("~/Capstone Project Case Study 1/202211-divvy-tripdata.csv")
+december_22 <- read.csv("~/Capstone Project Case Study 1/202212-divvy-tripdata.csv")
+january_23 <- read.csv("~/Capstone Project Case Study 1/202301-divvy-tripdata.csv")
+february_23 <- read.csv("~/Capstone Project Case Study 1/202302-divvy-tripdata.csv")
+march_23 <- read.csv("~/Capstone Project Case Study 1/202303-divvy-tripdata.csv")
+april_23 <- read.csv("~/Capstone Project Case Study 1/202304-divvy-tripdata.csv")
+may_23 <- read.csv("~/Capstone Project Case Study 1/202305-divvy-tripdata.csv")
+june_23 <- read.csv("~/Capstone Project Case Study 1/202306-divvy-tripdata.csv")
+```
+
+
+#====================================================
+# STEP 2: WRANGLE DATA AND COMBINE INTO A SINGLE FILE
+#====================================================
+
+Combined the data using the rbind to bind the rows because the dataframes all used the same columns 
+```{r}
+combined_data <- rbind(july_22, august_22, september_22, october_22, november_22, december_22, january_23, february_23, march_23, april_23, may_23, june_23)
+```
+
+Inspecting the combined dataframe using the 'colnames', 'dim', 'head', 'str', 'summary'
+
+```{r}
+colnames(combined_data) 
+```
+
+Checking to see if any duplicates from the dataframe
+```{r}
+n_distinct(combined_data$ride_id) #Count distinct ride_id, it should be the same number as rows.
+```
+
+```{r}
+nrow(combined_data)
+```
+
+```{r}
+head(combined_data)
+```
+
+```{r}
+str(combined_data)
+```
+
+```{r}
+summary(combined_data)
+```
+
+#======================================================
+# STEP 3: CLEAN UP AND ADD DATA TO PREPARE FOR ANALYSIS
+#======================================================
+
+1. Calculated and adding into a new column the ride_length
+
+```{r}
+combined_data$ride_length <- as_hms(difftime(combined_data$ended_at, combined_data$started_at))
+```
+
+2. Created the column of day_of_week to assign a numeric value of 1 through 7 to days of the week using the wday().
+```{r}
+combined_data$day_of_week <- wday(combined_data$started_at)
+```
+
+3. Removed empty rows
+
+```{r}
+combined_data <- janitor::remove_empty(combined_data,which = c("cols")) #removes empty columns
+combined_data<- janitor::remove_empty(combined_data,which = c("rows")) #removes empty rows
+```
+
+4. Created a new dataframe to exclude the rows with negative time in ride_length. (Negative entries occurred when bikes were taken out of docks and checked for quality by Cyclistic)
+```{r}
+sum(combined_data$ride_length < 0, na.rm=TRUE)#Counts number of rows < 0 in 'ride_length')
+```
+
+```{r}
+combined_data_v2 <- combined_data[!(combined_data$ride_length<0),]
+sum(combined_data_v2$ride_length < 0, na.rm=TRUE) #Counts number of rows < 0 in 'ride_length')
+```
+5. Changed the numeric data of day_of_week to a string.
+
+```{r}
+combined_data_v2 <- combined_data_v2 %>% 
+  mutate(day_of_week=recode(day_of_week,
+                            "1" = "Sunday",
+                            "2" = "Monday",
+                            "3" = "Tuesday",
+                            "4" = "Wednesday",
+                            "5" = "Thursday",
+                            "6" = "Friday",
+                            "7" = "Saturday"))
+```
+
+
+**Analyze**
+
+#=====================================
+# STEP 4: CONDUCT DESCRIPTIVE ANALYSIS
+#=====================================
+
+Descriptive analysis on ride_length (all figures in seconds) 
+
+```{r}
+as_hms(mean(combined_data_v2$ride_length)) #straight average (total ride length / rides)
+as_hms(median(combined_data_v2$ride_length)) #midpoint number in the ascending array of ride lengths
+as_hms(max(combined_data_v2$ride_length)) #longest ride
+as_hms(min(combined_data_v2$ride_length)) #shortest ride
+```
+
+Descriptive analysis on ‘ride_length’ by user type comparing casual and member users:
+
+```{r}
+aggregate(combined_data_v2$ride_length ~ combined_data_v2$member_casual, FUN = mean)
+```
+
+```{r}
+aggregate(combined_data_v2$ride_length ~ combined_data_v2$member_casual, FUN = median)
+```
+
+```{r}
+aggregate(combined_data_v2$ride_length ~ combined_data_v2$member_casual, FUN = max)
+```
+
+```{r}
+aggregate(combined_data_v2$ride_length ~ combined_data_v2$member_casual, FUN = min)
+```
+
+See the average ride time by each day for members vs casual users
+
+1. Reordered the column day_of_week
+
+```{r}
+combined_data_v2$day_of_week <- ordered(combined_data_v2$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+```
+
+2. Ran the average ride time by each day for members vs casual users
+```{r}
+aggregate(combined_data_v2$ride_length ~ combined_data_v2$member_casual + combined_data_v2$day_of_week, FUN = mean)
+```
+
+3. Showed the average ride time by month for members vs casual users
+```{r}
+combined_data_v2 %>% 
+  group_by(months = month.name[month(started_at)], member_casual) %>% 
+  summarize(row_count = n()) %>% 
+  arrange(match(months,month.name))
+```
+
+
+**Share**
+
+#Analyze rider data by type and weekday
+
+
+```{r}
+combined_data_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge")+
+  ggtitle("Daily rides by user type and weekday:")
+```
+
+
+```{r}
+combined_data_v2%>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge")+
+  ggtitle("Average ride duration by user type and weekday:")
+```
+
+
+
+
+**Conclusion**
+
+After performing the analysis, the data clearly shows several main differences between the behavior of casual and annual member riders:
+
+1. Casual riders spend on average **27.71 minutes** riding time. This is almost double when compared to the annual members averaging only **12.38 minutes**.
+2. There maybe a correlation between certain days of the week and an increase in casual riders on days such as Saturday and Sunday. This could indicate that casual riders are those people who are likely to use the bikes for the purpose of leisure and recreational activities during their free time. This may uggest that they may be utilizing the bikes for personal use and find it convenient for personal endeavors like exploring the city. 
+3. There is also an increase in casual riders during summer months such as June, July and August.
+
+**Act**
+
+Recommendation for the stakeholders.
+
+1. ***Seasonal marketing*** campaigns during the peak months of June, July and August, targeted toward the casual riders, demonstrating the cost-effectiveness of an all-year round membership. 
+2. ***Weekend promotion:*** Offer benefits on weekends, such as exclusive access to certain events and spots, and coupons at restaurants. Highlight the flexibility and convenience of Cyclistic bikes for weekend adventures and leisure activities.
